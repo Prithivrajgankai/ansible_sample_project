@@ -1,0 +1,17 @@
+---
+- name: Create User
+  hosts: all
+  vars:
+    user: devops
+    password: $6$SSwfnnY1k.Wjyd6c$ajr3icBeg664b1A6rqjQxttcXdLMOnENyjKMKiQOvxPnTy4/Ir6ClMJDkLFeB2re6npmAc1WDFGRsTM7kseci1
+  tasks:
+  - name: Create {{user}} User
+    ansible.builtin.user:
+      name: "{{ user }}"
+      password: "{{ password }}"
+      state: present
+  - name: Assign SUDO permission
+    ansible.builtin.lineinfile:
+      line: "devops  ALL=(ALL) NOPASSWD: ALL"
+      dest: /etc/sudoers
+

@@ -1,0 +1,55 @@
+---
+- name: Full Web Server Setup
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    user_name: deploy
+    user_password: "{{ 'Deploy@123' | password_hash('sha512') }}"
+    packages:
+      - nginx
+      - git
+      - vim
+
+  tasks:
+    - name: Create deploy user
+      user:
+        name: "{{ user_name }}"
+        password: "{{ user_password }}"
+        shell: /bin/bash
+        groups: wheel
+        append: yes
+
+    - name: Install necessary packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ packages }}"
+
+    - name: Push custom index page
+      template:
+        src: files/index.html
+        dest: /usr/share/nginx/html/index.html
+        owner: nginx
+        group: nginx
+        mode: '0644'
+
+    - name: Push nginx config
+      copy:
+        src: files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        backup: yes
+      notify: Restart nginx
+
+    - name: Push dynamic motd banner
+      template:
+        src: templates/motd_banner.j2
+        dest: /etc/motd
+
+  handlers:
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
+
